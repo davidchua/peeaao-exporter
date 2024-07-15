@@ -26,7 +26,7 @@ func MakePing(target string, locations []string, authToken string) (io.ReadClose
 		return nil, 0, err
 	}
 
-	r.Header.Add("Authorization", "Bearer abcdefghij")
+	r.Header.Add("Authorization", fmt.Sprintf("Bearer %s", authToken))
 	r.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 
 	client := &http.Client{}
