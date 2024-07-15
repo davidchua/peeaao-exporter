@@ -1,6 +1,6 @@
 # Ping Everything Everywhere All At Once (PEEAAO) Exporter
 
-PEEAAO Exporter is a self-hosted Prometheus Exporter that performs a ping on a list of targeted websites and servers using PEEAAO's API Service. It records the response time received from servers around the world as metrics. It also records the status code received and the status of the target.
+PEEAAO Exporter is a self-hosted Prometheus Exporter that performs a ping on a list of targeted websites and servers using PEEAAO's API Service. It records the response time received from servers around the world as metrics.
 
 For more information on the returned values, please refer to [PEEAAO](https://peeaao.com) documentation.
 
