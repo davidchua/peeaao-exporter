@@ -21,10 +21,10 @@ $ go build
 
 | ENV | Optional | Remarks | Example |
 | - | - | - | - |
-| ADDR | Y | Address:Port that exporter will listen to | "localhost:9100"
+| ADDR | Y | Address:Port that exporter will listen to | localhost:9100
 | AUTH_TOKEN | N | AUTH_TOKEN/API_KEY from PEEAAO | |
-| LOCATIONS | Y | List of server locations delimited by "," ; Refer to the supported locations at peeaao.com | "singapore,nyc" |
-| TARGETS | N | List of targets delimited by "," | "https://peeaao.com" |
+| LOCATIONS | Y | List of server locations delimited by "," ; Refer to the supported locations at peeaao.com | singapore,nyc |
+| TARGETS | N | List of targets delimited by "," | https://peeaao.com |
 
 ### Metrics
 
