@@ -13,6 +13,8 @@ import (
 
 type pingCollector struct {
 	responseTimeMetric *prometheus.Desc
+	responseCodeMetric *prometheus.Desc
+	statusMetric       *prometheus.Desc
 	authToken          string
 	targets            []string
 	locations          []string
@@ -36,6 +38,14 @@ func NewPingCollector(targets, locations, authToken string) *pingCollector {
 		targets:   targetSlice,
 		authToken: authToken,
 		locations: locationSlice,
+		statusMetric: prometheus.NewDesc("peeaao_response_status",
+			"Status of Target (up/down/mixed - 0 down, 1 up, 2 mixed)",
+			[]string{"target"}, nil,
+		),
+		responseCodeMetric: prometheus.NewDesc("peeaao_response_code",
+			"Response Code of Ping",
+			[]string{"target", "location"}, nil,
+		),
 		responseTimeMetric: prometheus.NewDesc("peeaao_response_time",
 			"Response Time of Ping",
 			[]string{"target", "location"}, nil,
@@ -49,6 +59,8 @@ func (collector *pingCollector) Describe(ch chan<- *prometheus.Desc) {
 
 	//Update this section with the each metric you create for a given collector
 	ch <- collector.responseTimeMetric
+	ch <- collector.responseCodeMetric
+	ch <- collector.statusMetric
 }
 
 // PingerPayload represents the payload returned from PEEAAO's API call
@@ -71,10 +83,18 @@ type Result struct {
 //Collect implements required collect function for all prometheus collectors
 func (collector *pingCollector) Collect(ch chan<- prometheus.Metric) {
 
-	var wg sync.WaitGroup
-	var payload PingerPayload
+	const (
+		StatusDown float64 = iota
+		StatusUp
+		StatusMixed
+	)
 
-	var authToken string = collector.authToken
+	var (
+		wg      sync.WaitGroup
+		payload PingerPayload
+
+		authToken string = collector.authToken
+	)
 
 	for _, target := range collector.targets {
 
@@ -101,6 +121,8 @@ func (collector *pingCollector) Collect(ch chan<- prometheus.Metric) {
 			}
 
 			var metricValue float64
+			var responseCodeValue float64
+			var statusValue float64
 
 			for _, location := range locations {
 
@@ -110,11 +132,27 @@ func (collector *pingCollector) Collect(ch chan<- prometheus.Metric) {
 				}
 
 				metricValue = float64(payload.Locations[location][0].ResultInMs)
+				responseCodeValue = float64(payload.Locations[location][0].Code)
 
-				m1 := prometheus.MustNewConstMetric(collector.responseTimeMetric, prometheus.GaugeValue, metricValue, target, location)
-				m1 = prometheus.NewMetricWithTimestamp(time.Now(), m1)
-				ch <- m1
+				responseTimeMetric := prometheus.MustNewConstMetric(collector.responseTimeMetric, prometheus.GaugeValue, metricValue, target, location)
+				responseTimeMetric = prometheus.NewMetricWithTimestamp(time.Now(), responseTimeMetric)
+				responseCodeMetric := prometheus.MustNewConstMetric(collector.responseCodeMetric, prometheus.GaugeValue, responseCodeValue, target, location)
+				responseCodeMetric = prometheus.NewMetricWithTimestamp(time.Now(), responseCodeMetric)
+				ch <- responseTimeMetric
+				ch <- responseCodeMetric
 			}
+			switch payload.Status {
+
+			case "up":
+				statusValue = StatusUp
+			case "down":
+				statusValue = StatusDown
+			case "mixed":
+				statusValue = StatusMixed
+			}
+			statusMetric := prometheus.MustNewConstMetric(collector.statusMetric, prometheus.GaugeValue, statusValue, target)
+			statusMetric = prometheus.NewMetricWithTimestamp(time.Now(), statusMetric)
+			ch <- statusMetric
 		}()
 
 	}
